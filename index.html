@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Fill Algorithm Demo</title>
+    <style>
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(64, 4px);
+        }
+        .cell {
+            width: 4px;
+            height: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>Flood Fill Algorithm Demo</h2>
+    <input type="color" id="colorPicker">
+    <div id="grid"></div>
+    
+    <script>
+        const GRID_SIZE = 64;
+        const COLORS = ["#FF5733", "#33FF57"];
+        const grid = document.getElementById("grid");
+        let cells = [];
+
+        function generateGrid() {
+            for (let x = 0; x < GRID_SIZE; x++) {
+                cells[x] = [];
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    const cell = document.createElement("div");
+                    cell.classList.add("cell");
+                    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                    cell.style.backgroundColor = color;
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    cell.dataset.color = color;
+                    cell.addEventListener("click", () => floodFill(x, y, cell.dataset.color, document.getElementById("colorPicker").value));
+                    grid.appendChild(cell);
+                    cells[x][y] = cell;
+                }
+            }
+        }
+
+        function floodFill(x, y, targetColor, fillColor) {
+            if (targetColor === fillColor) return;
+            const queue = [[x, y]];
+            
+            async function processQueue() {
+                while (queue.length) {
+                    const [cx, cy] = queue.shift();
+                    if (cx < 0 || cy < 0 || cx >= GRID_SIZE || cy >= GRID_SIZE || cells[cx][cy].dataset.color !== targetColor) {
+                        continue;
+                    }
+                    
+                    cells[cx][cy].style.backgroundColor = fillColor;
+                    cells[cx][cy].dataset.color = fillColor;
+                    await new Promise(res => setTimeout(res, 2));
+                    
+                    queue.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+                }
+            }
+            
+            processQueue();
+        }
+
+        generateGrid();
+    </script>
+</body>
+</html>
