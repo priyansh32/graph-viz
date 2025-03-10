@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Fill Algorithm Demo</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+            overflow: auto;
+        }
+        #controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 14px;
+        }
+        #grid {
+            display: grid;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+        }
+        .cell {
+            cursor: pointer;
+            width: 4px;
+            height: 4px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #colorPicker {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Flood Fill Algorithm Demo</h2>
+    <div id="controls">
+        <label>Grid Size: <input type="number" id="gridSize" value="32" min="10" max="128"></label>
+        <label>Cell Size: <input type="number" id="cellSize" value="16" min="1" max="10"></label>
+        <label>Flood Speed (ms): <input type="number" id="speed" value="50" min="1" max="300"></label>
+        <label>Number of Colors: <input type="number" id="numColors" value="3" min="2" max="10"></label>
+        <label>Algorithm:
+            <select id="algorithm">
+                <option value="bfs">BFS</option>
+                <option value="dfs">DFS</option>
+            </select>
+        </label>
+    </div>
+    <div id="colorInputs"></div>
+    <button onclick="initializeGrid()">Generate Grid</button>
+    <input type="color" id="colorPicker">
+    <p>Select a color and click on a starting pixel to start flood fill.</p>
+    <div id="grid"></div>
+    
+    <script>
+        const initialColors = [ "#5ea56b", "#d8c85e", "#5e88d8","#d86b5e"];
+
+        function generateColorInputs() {
+            const numColors = document.getElementById("numColors").value;
+            const colorInputsDiv = document.getElementById("colorInputs");
+            colorInputsDiv.innerHTML = "";
+            for (let i = 0; i < numColors; i++) {
+                const input = document.createElement("input");
+                input.type = "color";
+                input.value =  initialColors[i] || `#${Math.floor(Math.random()*16777215).toString(16)}`;
+                colorInputsDiv.appendChild(input);
+            }
+        }
+        
+        document.getElementById("numColors").addEventListener("change", generateColorInputs);
+        generateColorInputs();
+        
+        function initializeGrid() {
+            const gridSize = parseInt(document.getElementById("gridSize").value);
+            const colors = Array.from(document.getElementById("colorInputs").children).map(input => input.value);
+            const grid = document.getElementById("grid");
+            grid.style.gridTemplateColumns = `repeat(${gridSize}, ${document.getElementById("cellSize").value}px)`;
+            grid.innerHTML = "";
+            let cells = [];
+            
+            for (let x = 0; x < gridSize; x++) {
+                cells[x] = [];
+                for (let y = 0; y < gridSize; y++) {
+                    const cell = document.createElement("div");
+                    cell.classList.add("cell");
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    cell.style.backgroundColor = color;
+                    cell.style.width = `${document.getElementById("cellSize").value}px`;
+                    cell.style.height = `${document.getElementById("cellSize").value}px`;
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    cell.dataset.color = color;
+                    cell.addEventListener("click", () => floodFill(x, y, cell.dataset.color, document.getElementById("colorPicker").value));
+                    grid.appendChild(cell);
+                    cells[x][y] = cell;
+                }
+            }
+        }
+        
+        function floodFill(x, y, targetColor, fillColor) {
+            if (targetColor === fillColor) return;
+            const gridSize = parseInt(document.getElementById("gridSize").value);
+            const speed = parseInt(document.getElementById("speed").value);
+            const algorithm = document.getElementById("algorithm").value;
+            const queue = [[x, y]];
+            
+            async function processQueue() {
+                while (queue.length) {
+                    const [cx, cy] = algorithm === "bfs" ? queue.shift() : queue.pop();
+                    const cell = document.querySelector(`[data-x='${cx}'][data-y='${cy}']`);
+                    if (!cell || cell.dataset.color !== targetColor) continue;
+                    cell.style.backgroundColor = fillColor;
+                    cell.dataset.color = fillColor;
+                    await new Promise(res => setTimeout(res, speed));
+                    queue.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+                }
+            }
+            
+            processQueue();
+        }
+        
+        initializeGrid();
+    </script>
+</body>
+</html>

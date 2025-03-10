@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BFS Pathfinding with Auto Obstacles</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+            overflow: auto;
+        }
+        #controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 14px;
+        }
+        #grid {
+            display: grid;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+        }
+        .cell {
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ddd;
+            background-color: white;
+        }
+        .start { background-color: green !important; }
+        .end { background-color: red !important; }
+        .obstacle { background-color: black !important; }
+        .visited { background-color: lightblue !important; }
+        .path { background-color: yellow !important; }
+        button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h2>BFS Pathfinding with Auto Obstacles</h2>
+    <div id="controls">
+        <label>Grid Size: <input type="number" id="gridSize" value="20" min="5" max="50"></label>
+        <label>Speed (ms): <input type="number" id="speed" value="50" min="10" max="300"></label>
+        <label>Obstacle Chance (%): <input type="number" id="obstacleChance" value="30" min="0" max="100"></label>
+    </div>
+    <button onclick="initializeGrid()">Generate Grid</button>
+    <button onclick="runBFS()">Run BFS</button>
+    <p>Click cells to set <strong>Start (Green), End (Red), and Obstacles (Black)</strong>.</p>
+    <div id="grid"></div>
+
+    <script>
+        let gridSize = 20;
+        let start = null, end = null;
+        let cells = [];
+
+        function initializeGrid() {
+            gridSize = parseInt(document.getElementById("gridSize").value);
+            let obstacleChance = parseInt(document.getElementById("obstacleChance").value);
+            const grid = document.getElementById("grid");
+            grid.innerHTML = "";
+            grid.style.gridTemplateColumns = `repeat(${gridSize}, 20px)`;
+            cells = [];
+
+            for (let x = 0; x < gridSize; x++) {
+                cells[x] = [];
+                for (let y = 0; y < gridSize; y++) {
+                    const cell = document.createElement("div");
+                    cell.classList.add("cell");
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    cell.addEventListener("click", () => setCellType(cell, x, y));
+
+                    if (Math.random() < obstacleChance / 100) {
+                        cell.classList.add("obstacle");  // 30% chance of an obstacle
+                    }
+
+                    grid.appendChild(cell);
+                    cells[x][y] = cell;
+                }
+            }
+            start = null;
+            end = null;
+        }
+
+        function setCellType(cell, x, y) {
+            if (!start) {
+                start = { x, y };
+                cell.classList.add("start");
+                cell.classList.remove("obstacle");
+            } else if (!end && !cell.classList.contains("start")) {
+                end = { x, y };
+                cell.classList.add("end");
+                cell.classList.remove("obstacle");
+            } else if (!cell.classList.contains("start") && !cell.classList.contains("end")) {
+                cell.classList.toggle("obstacle");
+            }
+        }
+
+        async function runBFS() {
+            if (!start || !end) {
+                alert("Select both Start and End points first!");
+                return;
+            }
+            let speed = parseInt(document.getElementById("speed").value);
+            let queue = [{ x: start.x, y: start.y, path: [] }];
+            let visited = new Set();
+            visited.add(`${start.x}-${start.y}`);
+
+            while (queue.length) {
+                let { x, y, path } = queue.shift();
+                let cell = cells[x][y];
+
+                if (x === end.x && y === end.y) {
+                    drawPath(path);
+                    return;
+                }
+
+                if (cell !== cells[start.x][start.y]) cell.classList.add("visited");
+                await new Promise(res => setTimeout(res, speed));
+
+                let directions = [
+                    { dx: 1, dy: 0 },
+                    { dx: -1, dy: 0 },
+                    { dx: 0, dy: 1 },
+                    { dx: 0, dy: -1 }
+                ];
+
+                for (let { dx, dy } of directions) {
+                    let nx = x + dx, ny = y + dy;
+                    if (nx >= 0 && ny >= 0 && nx < gridSize && ny < gridSize) {
+                        let nextCell = cells[nx][ny];
+                        if (!visited.has(`${nx}-${ny}`) && !nextCell.classList.contains("obstacle")) {
+                            queue.push({ x: nx, y: ny, path: [...path, { x: nx, y: ny }] });
+                            visited.add(`${nx}-${ny}`);
+                        }
+                    }
+                }
+            }
+
+            alert("No path found!");
+        }
+
+        function drawPath(path) {
+            path.forEach(({ x, y }) => {
+                if (cells[x][y] !== cells[end.x][end.y]) {
+                    cells[x][y].classList.add("path");
+                }
+            });
+        }
+
+        initializeGrid();
+    </script>
+</body>
+</html>
